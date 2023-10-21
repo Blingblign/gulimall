@@ -1,0 +1,11 @@
+#找到nacos上名为order_service-dev.yaml的配置文件
+#spring:
+#  application:
+#    name: order_service
+#  profiles:
+#    active: dev
+#  cloud:
+#    nacos:
+#      config:
+#        server-addr: 192.168.56.10:8848
+#        file-extension: yaml

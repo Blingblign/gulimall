@@ -1,0 +1,16 @@
+spring:
+  cloud:
+    alicloud:
+      access-key: LTAI5tAM36ZbQF4exrH81e1S
+      secret-key: adsIgEokIVXx9c3wA5rQ6nnLoEw6IS
+      oss:
+        endpoint: oss-cn-chengdu.aliyuncs.com
+        bucket: bling-1010
+    nacos:
+      discovery:
+        server-addr: 192.168.56.10:8848
+  application:
+    name: gulimall-thirdparty
+
+server:
+  port: 30000

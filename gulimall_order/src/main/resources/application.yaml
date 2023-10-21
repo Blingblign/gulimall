@@ -1,0 +1,91 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: gulimall-order
+  session:
+    store-type: redis #使用redis存储session信息
+  thymeleaf:
+    cache: false #开发环境关闭thymeleaf缓存
+
+  datasource:
+    url: jdbc:mysql://192.168.56.10:3306/gulimall_oms?useUnicode=true&characterEncoding=utf-8&useSSL=false
+    driver-class-name: com.mysql.jdbc.Driver
+    username: root
+    password: root
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.56.10:8848
+#        namespace:
+#        cluster-name: HZ 集群名字
+    sentinel:
+
+      transport:
+        dashboard: localhost:8080 #sentinel 控制台地址
+        port: 8719 #sentinel客户端api端口，用于dashboard请求数据
+      datasource:
+        #流控规则flow，降级规则degrade，授权规则 authority，参数限流规则param-flow
+        flow:
+          nacos:
+            server-addr: 192.168.58.10:8848
+            dataId: orderservice-flow-rules
+            groupId: SENTINEL-GROUP
+            rule-type: flow
+
+#        degrade:
+
+
+
+
+  redis:
+    host: 192.168.56.10
+
+  rabbitmq:
+    virtual-host: my_vhost
+    host: 192.168.56.10
+    # 开启发送端发送确认，无论是否到达broker都会触发回调【发送端确认机制+本地事务表】ack+nack+ex
+    publisher-confirm-type: correlated
+    # 开启发送端抵达队列确认，消息未被队列接收时触发回调【发送端确认机制+本地事务表】
+    publisher-returns: true
+    # 消息在没有被队列接收时是否强行退回,true调用ReturnCallback退回消息，false消息直接丢弃
+    template:
+      mandatory: true
+    listener:
+      simple:
+        acknowledge-mode: manual #开启手动ack模式。防止消息丢失
+#        prefetch: 10 #消息预取
+
+#feign 连接池 sentinel
+feign:
+  #当使用负载均衡时，引入的是loadBalancerClient，下列配置不生效
+  httpclient:
+    max-connections: 200
+    max-connections-per-route: 50 #单个路径的最大连接数
+    enabled: true #默认是开启的
+  sentinel:
+    enabled: true #开启feign的熔断降级功能
+
+
+#mybatis plus
+mybatis-plus:
+  #classpath*表示扫描包括引入的其他包下的mapper映射文件
+  mapper-locations: classpath*:/mapper/**/*.xml
+  global-config:
+    db-config:
+      #设置主键自增
+      id-type: auto
+
+#自定义线程池
+gulimall:
+  thread:
+    core-size: 10
+    max-size: 30
+    keep-alive-time: 600
+
+#    配置访问某个微服务的负载均衡策略
+#xxxservice:
+#  ribbon:
+#    NFLoadBalancerRuleClassName: com.alibaba.cloud.nacos.ribbon.NacosRule

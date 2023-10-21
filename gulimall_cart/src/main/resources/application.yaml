@@ -1,0 +1,6 @@
+#自定义线程池参数设置
+gulimall:
+  thread:
+    core-size: 20
+    max-size: 30
+    keep-alive-time: 600

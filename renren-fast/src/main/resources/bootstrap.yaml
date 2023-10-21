@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: renren-admin-service
+  cloud:
+    nacos:
+      config:
+        server-addr: 192.168.56.10:8848
+        namespace: b32b63a1-4982-462a-b04d-bdf6f37c5785
+      discovery:
+        server-addr: 192.168.56.10:8848
