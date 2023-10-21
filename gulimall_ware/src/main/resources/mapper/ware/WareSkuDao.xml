@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.zzclearning.gulimall.ware.dao.WareSkuDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="com.zzclearning.gulimall.ware.entity.WareSkuEntity" id="wareSkuMap">
+        <result property="id" column="id"/>
+        <result property="skuId" column="sku_id"/>
+        <result property="wareId" column="ware_id"/>
+        <result property="stock" column="stock"/>
+        <result property="skuName" column="sku_name"/>
+        <result property="stockLocked" column="stock_locked"/>
+    </resultMap>
+    <update id="updateSkuNum">
+        update wms_ware_sku set stock = stock + #{skuNum} where sku_id = #{skuId} and ware_id = #{wareId}
+    </update>
+    <update id="updateStockLock">
+        UPDATE wms_ware_sku SET stock_locked = stock_locked + #{skuNum} WHERE sku_id = #{skuId} AND ware_id = #{wareId} AND stock-stock_locked >= #{skuNum};
+    </update>
+    <update id="releaseStock">
+        UPDATE wms_ware_sku SET stock_locked = stock_locked - #{skuNum} WHERE sku_id = #{skuId} AND ware_id = #{wareId};
+    </update>
+    <update id="reduceSkuStock">
+        UPDATE wms_ware_sku SET stock = stock - #{skuNum},stock_locked = stock_locked - #{skuNum} WHERE sku_id = #{skuId} AND ware_id = #{wareId};
+    </update>
+
+    <select id="getStock" resultType="com.zzclearning.to.SkuHaStockVo">
+        select sku_id,sum(stock-stock_locked) stock from wms_ware_sku
+        group by sku_id
+        having sku_id in
+        <foreach collection="skuIds" item="skuId" separator="," open="(" close=")">
+            #{skuId}
+        </foreach>
+    </select>
+    <select id="skuWareHasStock" resultType="java.lang.Long">
+        SELECT ware_id FROM wms_ware_sku WHERE sku_id = #{skuId} AND stock-stock_locked >= #{skuNum}
+    </select>
+
+
+</mapper>

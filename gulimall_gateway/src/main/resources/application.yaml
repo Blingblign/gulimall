@@ -1,0 +1,77 @@
+server:
+  port: 88
+
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.56.10:8848
+    gateway:
+      routes:
+        #商品服务
+        - id : product-route
+          uri: lb://gulimall-product
+          predicates:
+            - Path=/api/product/**
+          filters:
+            - RewritePath=/api/?(?<segment>.*), /$\{segment}
+        #第三方服务
+        - id: thirdparty-route
+          uri: lb://gulimall-thirdparty
+          predicates:
+            - Path=/api/thirdparty/**
+          filters:
+            - RewritePath=/api/?(?<segment>.*), /$\{segment}
+        #会员服务
+        - id: member-route
+          uri: lb://gulimall-member
+          predicates:
+            - Path=/api/member/**
+          filters:
+            - RewritePath=/api/?(?<segment>.*), /$\{segment}
+        #仓储服务
+        - id: ware-route
+          uri: lb://gulimall-ware
+          predicates:
+            - Path=/api/ware/**
+          filters:
+            - RewritePath=/api/?(?<segment>.*), /$\{segment}
+        #后台管理服务
+        - id: admin-route
+          uri: lb://renren-admin-service
+          predicates:
+            - Path=/api/**
+          filters:
+            - RewritePath=/api/?(?<segment>.*), /renren-fast/$\{segment}
+        #首页服务
+        - id: index-route
+          uri: lb://gulimall-product
+          predicates:
+            - Host=gulimall.com,item.gulimall.com
+        #搜索服务
+        - id: search-route
+          uri: lb://gulimall-search
+          predicates:
+            - Host=search.gulimall.com
+        #认证服务
+        - id: auth-server-route
+          uri: lb://gulimall-auth-server
+          predicates:
+            - Host=auth.gulimall.com
+        #购物车服务
+        - id: cart-route
+          uri: lb://gulimall-cart
+          predicates:
+            - Host=cart.gulimall.com
+        #订单服务
+        - id: order-route
+          uri: lb://gulimall-order
+          predicates:
+            - Host=order.gulimall.com
+
+        #秒杀服务
+        - id: seckill-route
+          uri: lb://gulimall-seckill
+          predicates:
+            - Host=seckill.gulimall.com
+

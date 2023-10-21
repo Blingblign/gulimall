@@ -1,0 +1,47 @@
+
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    url: jdbc:mysql://192.168.56.10:3306/gulimall_pms?useUnicode=true&characterEncoding=utf-8&useSSL=false
+    driver-class-name: com.mysql.jdbc.Driver
+    username: root
+    password: root
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.56.10:8848
+      config:
+        enabled: false #禁用配置中心,并没有效果，因为在application.yaml加载前就会创建nacosConfigBootStrapConfiguration的Bean到bootstrapContext中
+  application:
+    name: gulimall-product
+  jackson:
+    date-format: yyyy-MM-dd HH-mm-ss
+  thymeleaf:
+#    关闭缓存，实时更新修改结果
+    cache: false
+  redis:
+    host: 192.168.56.10
+    port: 6379
+#  mvc:
+#    hiddenmethod:
+#      filter:
+#        enabled: true
+mybatis-plus:
+  #classpath*表示扫描包括引入的其他包下的mapper映射文件
+  mapper-locations: classpath*:/mapper/**/*.xml
+  global-config:
+    db-config:
+      #设置主键自增
+      id-type: auto
+server:
+  port: 10000
+logging:
+  level:
+    com.zzclearning.gulimall.product.dao: debug
+#自定义线程池参数设置
+gulimall:
+  thread:
+    core-size: 20
+    max-size: 30
+    keep-alive-time: 10
+#debug: true  从环境变量中获取debug值为true 则设置LoggingLevel=DEBUG
