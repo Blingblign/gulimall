@@ -42,7 +42,7 @@ public class CartServiceImpl implements CartService {
     public void addCartItem(Long skuId, Integer num) throws ExecutionException, InterruptedException {
         //先查看redis中是否有该商品数据
         BoundHashOperations<String, Object, Object> ops = getCartOps();
-        String  cartItemString = (String)ops.get(skuId.toString());
+        String cartItemString = (String)ops.get(skuId.toString());
         if (!StringUtils.isEmpty(cartItemString)) {
             //redis中有商品数据
             CartItem cartItem = JSON.parseObject(cartItemString, CartItem.class);
@@ -56,7 +56,7 @@ public class CartServiceImpl implements CartService {
         CompletableFuture<Void> skuInfoFuture = CompletableFuture.runAsync(() -> {
             R result = productFeignService.info(skuId);
             if (result.getCode() == 0) {
-                SkuInfoTo skuInfo = result.getData("skuInfo", new TypeReference<SkuInfoTo>() {
+                SkuInfoTo skuInfo = result.getData("data", new TypeReference<SkuInfoTo>() {
                 });
                 cartItem.setSkuId(skuId);
                 cartItem.setCount(num);
@@ -152,7 +152,7 @@ public class CartServiceImpl implements CartService {
             cartItems = cartItems.stream().filter(CartItem::getCheck).peek(cartItem -> {
                         //更新价格
                         R res = productFeignService.info(cartItem.getSkuId());
-                        SkuInfoTo skuInfo = res.getData("skuInfo", new TypeReference<SkuInfoTo>() {
+                        SkuInfoTo skuInfo = res.getData("data", new TypeReference<SkuInfoTo>() {
                         });
                         cartItem.setPrice(skuInfo.getPrice());
             }).collect(Collectors.toList());

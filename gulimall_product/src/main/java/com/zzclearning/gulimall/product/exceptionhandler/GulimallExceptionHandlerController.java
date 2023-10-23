@@ -15,7 +15,7 @@ import java.util.HashMap;
  * @create 2022-10-27 10:02
  */
 @Slf4j
-@RestControllerAdvice(basePackages = "com.zzclearning.gulimall.product.controller")
+@RestControllerAdvice(basePackages = "com.zzclearning.gulimall.product")
 public class GulimallExceptionHandlerController {
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
     public R validateException(MethodArgumentNotValidException ex) {

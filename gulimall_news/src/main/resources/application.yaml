@@ -1,0 +1,17 @@
+server:
+  port: 9001
+
+spring:
+  profiles:
+    active: test
+
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include:
+
+
+  application:
+    name: nacos-news
+

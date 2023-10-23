@@ -14,7 +14,7 @@ import org.springframework.session.web.http.DefaultCookieSerializer;
 @Configuration
 public class MyRedisSessionConfig {
     /**
-     * 使用jsong格式存储session信息
+     * 使用json格式存储session信息
      * @return
      */
     @Bean

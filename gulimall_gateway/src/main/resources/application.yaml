@@ -75,3 +75,9 @@ spring:
           predicates:
             - Host=seckill.gulimall.com
 
+        #新闻服务，测试sso
+        - id: news-route
+          uri: lb://nacos-news
+          predicates:
+            - Host=news.com
+

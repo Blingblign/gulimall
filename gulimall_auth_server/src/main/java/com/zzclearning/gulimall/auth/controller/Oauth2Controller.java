@@ -1,19 +1,26 @@
 package com.zzclearning.gulimall.auth.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.zzclearning.common.constant.AuthServerConstant;
 import com.zzclearning.common.utils.R;
+import com.zzclearning.gulimall.auth.constant.AuthConstant;
 import com.zzclearning.gulimall.auth.feign.MemberFeignService;
 import com.zzclearning.to.MemberEntityVo;
 import com.zzclearning.to.SocialUserTo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 社交登录
@@ -25,14 +32,17 @@ import java.util.UUID;
 public class Oauth2Controller {
     @Autowired
     MemberFeignService memberFeignService;
+    @Autowired
+    StringRedisTemplate redisTemplate;
     /**
      * 微博账号登录的回调
      * @param code
-     * @param session
+     * @param
      * @return
      */
     @GetMapping("/oauth2.0/weibo/success")
-    public String oauth2Login(@RequestParam("code") String code, HttpSession session) {
+    public String oauth2Login(@RequestParam("code") String code, HttpServletResponse response,
+                              @RequestParam(value = "return_url",required = false)String url) {
         log.info("微博临时授权票据为{}",code);
         //TODO 1.根据临时授权票据code带上app_id,app_secret获取访问令牌access_token;HttpUtils.doPost(...)
         //2.获得social_uid,access_token,expires_in-->封装成SocialUser对象
@@ -44,11 +54,19 @@ public class Oauth2Controller {
         R result = memberFeignService.oauth2Login(socialUserTo);
         if (result.getCode() == 0) {
             //4.使用redisSession存储用户信息
-            session.setAttribute(AuthServerConstant.LOGIN_USER,result.getData(new TypeReference<MemberEntityVo>(){}));
-            return "redirect:http://gulimall.com";
+            //session.setAttribute(AuthServerConstant.LOGIN_USER,result.getData(new TypeReference<MemberEntityVo>(){}));
+            //登录成功，生成随机token，将用户信息保存在redis中
+            String ssoToken = UUID.randomUUID().toString().replace("-","");
+            MemberEntityVo member = result.getData(new TypeReference<MemberEntityVo>() {
+            });
+            redisTemplate.opsForValue().set(ssoToken, JSON.toJSONString(member), AuthConstant.TOKEN_EXPIRE_TIME, TimeUnit.SECONDS);
+            //设置cookie
+            response.addCookie(new Cookie(AuthConstant.SSO_COOKIE_NAME, ssoToken));
+            if (StringUtils.isEmpty(url))  return "redirect:http://gulimall.com" + "?token=" + ssoToken;
+            return "redirect:"+ url + "?token=" + ssoToken;
 
         } else {
-            return "redirect:http://auth.gulimall.com/login.html";
+            return "redirect:http://auth.gulimall.com/login.html?return_url=" + url;
         }
     }
 }

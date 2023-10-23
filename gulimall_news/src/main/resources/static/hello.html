@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>中国新闻</title>
+    <!--  引入vue-->
+    <script src="/static/index/js/vue.min.js"></script>
+    <!--  引入axios-->
+    <script src="/static/index/js/axios.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <div>{{userName}}</div>
+        <span v-if="userName">{{userName}}</span>
+        <button :disabled="!isDisabled" v-else @click="login()">未登录，请登录</button>
+        <img v-if="userImage" :src="userImage" style="width: 50px;height: 50px"/>
+        <br>
+        <button :disabled="isDisabled" @click="getNews()">获取最新新闻，登录后可查看</button>
+    </div>
+</body>
+<script>
+    var instance = axios.create({
+        baseURL: 'http://news.com',
+        timeout: 5000,
+        //   headers: {'Content-Type': 'application/json', }
+        // headers: { 'token': 'dddd',"name": 'abcd'}//会发出预检请求
+    });
+    const vm = new Vue({
+        el: '#app',
+        data() {
+            return {
+                userName: '',
+                userImage: '',
+                msg: '',
+                isDisabled: true
+            }
+        },
+        methods: {
+            login() {
+                window.location.href="http://auth.gulimall.com/login.html?return_url=http://news.com/hello"
+            },
+            getNews() {
+                window.location.href="http://news.com/news"
+
+            }
+
+        },
+
+        mounted() {
+            console.log("mounted。。。。")
+
+            //发送ajax请求获取登录信息
+            instance.get("/user",{
+                params: {
+                    // keyWord: queryString
+                }
+            })
+                .then(function (response) {
+                    console.log("响应数据：,{}",response.data);
+                    console.log(this)
+                    const data = response.data;
+                    if (response.data) {
+                        vm.userName = data.nickname;
+                        vm.userImage = data.header;
+                        vm.isDisabled = false;
+                    }
+                    console.log("this.userName=,{}",vm.userName);
+                    console.log("this.userName!=''结果,{}",vm.userName !=='');
+                })
+                .catch(function (error) {
+                    console.log(error.data);
+                    alert(error)
+                });
+        },
+        beforeCreate() {}, //生命周期 - 创建之前
+        beforeMount() {
+            console.log("before mounted。。。。")
+
+        }, //生命周期 - 挂载之前
+        beforeUpdate() {}, //生命周期 - 更新之前
+        updated() {
+            console.log("updated。。。。")
+
+        }, //生命周期 - 更新之后
+    })
+</script>
+</html>

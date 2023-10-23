@@ -1,0 +1,21 @@
+package com.zzclearning.gulimall.product.config;
+
+import com.zzclearning.gulimall.product.interceptor.ProductInterceptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+/**
+ * @author bling
+ * @create 2023-10-22 10:46
+ */
+@Configuration
+public class MyProductConfig implements WebMvcConfigurer {
+    @Autowired
+    ProductInterceptor productInterceptor;
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(productInterceptor).addPathPatterns("/**");
+    }
+}

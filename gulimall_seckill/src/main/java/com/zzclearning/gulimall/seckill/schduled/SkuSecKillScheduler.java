@@ -48,7 +48,7 @@ public class SkuSecKillScheduler {
      * 分布式锁
      *
      */
-    @Scheduled(cron = "0/3 * * * * ?")//每天晚上3点上架秒杀商品
+    @Scheduled(cron = "0 0 3 * * ?")//每天晚上3点上架秒杀商品
     @Async
     public void skuUpScheduleTask() {
         //分布式锁

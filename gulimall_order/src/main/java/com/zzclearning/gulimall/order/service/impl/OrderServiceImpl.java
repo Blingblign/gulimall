@@ -101,6 +101,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
         RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
         //根据用户id查询用户收货地址
         CompletableFuture<Void> addressFuture = CompletableFuture.runAsync(() -> {
+            //因为是线程池执行任务，需要给另一个线程的ThreadLocal对象添加请求信息
             RequestContextHolder.setRequestAttributes(requestAttributes);
             R res = memberFeignService.getUserAddresses(user.getId());
             List<MemberReceiveAddressTo> addresses = res.getData(new TypeReference<List<MemberReceiveAddressTo>>() {

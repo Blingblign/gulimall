@@ -1,9 +1,11 @@
 package com.zzclearning.gulimall.auth.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.zzclearning.common.constant.AuthServerConstant;
 import com.zzclearning.common.exception.BizExceptionEnum;
 import com.zzclearning.common.utils.R;
+import com.zzclearning.gulimall.auth.constant.AuthConstant;
 import com.zzclearning.gulimall.auth.feign.MemberFeignService;
 import com.zzclearning.gulimall.auth.service.UserAuthService;
 import com.zzclearning.to.MemberEntityVo;
@@ -13,17 +15,25 @@ import com.zzclearning.to.MemberRegisterLoginTo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author bling
@@ -40,15 +50,42 @@ public class LoginController {
 
     /**
      * 转到登录界面
+     * 单点登录结合springSession，实现一处登录，处处登录
+     * redis中使用token作为key存储用户信息
+     * 由于cookie不能跨域，通过认证服务器cookie保存token
      * @return
      */
     @GetMapping("/login.html")
-    public String login(HttpSession session) {
-        Object attribute = session.getAttribute(AuthServerConstant.LOGIN_USER);
-        if (attribute!=null) {
-            return "redirect:http://gulimall.com";
+    public String login(HttpSession session, @RequestParam(value = "return_url",required = false) String url,
+                        Model model,
+                        @CookieValue(value = "sso_token",required = false)String ssoToken) {
+        //在gulimall.com域下的服务
+        //Object attribute = session.getAttribute(AuthServerConstant.LOGIN_USER);
+        //if (attribute!=null) {
+        //    return "redirect:url";
+        //}
+        //不在gulimall.com域下的服务
+        if (!StringUtils.isEmpty(ssoToken)) {
+            String userInfo = redisTemplate.opsForValue().get(ssoToken);
+            if (userInfo != null) {
+                //已经登陆过
+                if (StringUtils.isEmpty(url)) return "redirect:http://gulimall.com" + "?token=" + ssoToken;
+                return "redirect:"+ url + "?token=" + ssoToken;
+            }
         }
+        //向下传递回调url
+        if (!StringUtils.isEmpty(url))
+            model.addAttribute("return_url",url);
         return "login";
+    }
+    /**
+     * 通过token获取用户信息
+     */
+    @ResponseBody
+    @GetMapping("/userinfo")
+    public String getUserInfoByToken(@RequestParam("token") String token) {
+        return redisTemplate.opsForValue().get(token);
+
     }
     /**
      * 普通登录
@@ -59,17 +96,29 @@ public class LoginController {
      * @return
      */
     @PostMapping("/login")
-    public String login(UserLoginVo userInfo, RedirectAttributes redirectAttributes, HttpSession session) {
+    public String login(UserLoginVo userInfo, RedirectAttributes redirectAttributes, HttpSession session,
+                        HttpServletResponse response,
+                        @RequestParam(value = "return_url",required = false) String url) {
         //调用远程会员服务校验密码
         R result = memberFeignService.loginValid(userInfo);
         if (result.getCode() != 0) {
             Map<String, String> errors = new HashMap<>();
            errors.put("msg",result.getData("msg",new TypeReference<String>(){}));
             redirectAttributes.addFlashAttribute("errors",errors);
-            return "redirect:http://auth.gulimall.com/login.html";
+            if (StringUtils.isEmpty(url))  return "redirect:http://auth.gulimall.com/login.html";
+            return "redirect:http://auth.gulimall.com/login.html" + "?return_url=" + url;
         }
-        session.setAttribute(AuthServerConstant.LOGIN_USER,result.getData(new TypeReference<MemberEntityVo>(){}));
-        return "redirect:http://gulimall.com";
+        //session.setAttribute(AuthServerConstant.LOGIN_USER,result.getData(new TypeReference<MemberEntityVo>(){}));
+        //登录成功，生成随机token，将用户信息保存在redis中
+        String ssoToken = UUID.randomUUID().toString().replace("-","");
+        MemberEntityVo member = result.getData(new TypeReference<MemberEntityVo>() {
+        });
+        //保存并设置过期时间
+        redisTemplate.opsForValue().set(ssoToken, JSON.toJSONString(member), AuthConstant.TOKEN_EXPIRE_TIME, TimeUnit.SECONDS);
+        //设置cookie
+        response.addCookie(new Cookie(AuthConstant.SSO_COOKIE_NAME,ssoToken));
+        if (StringUtils.isEmpty(url))  return "redirect:http://gulimall.com?token=" + ssoToken;
+        return "redirect:" + url + "?token=" + ssoToken;
     }
 
     @PostMapping("/register")
